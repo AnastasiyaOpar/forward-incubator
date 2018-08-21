@@ -1,0 +1,86 @@
+----  1 
+select count(*)  
+  from fw_process_log  
+where N_STATUS=500 
+     and V_MESSAGE like '%2520123%'
+---- 2 
+select to_char(DT_TIMESTAMP, 'dd.mon.yyyy'), v_message  
+  from fw_process_log  
+
+where N_STATUS=500 
+
+     and V_MESSAGE like '%2520123%'
+
+ order by DT_TIMESTAMP desc 
+---- 3 
+select *
+  from fw_process_log  
+
+where n_action=12 
+---- 4
+select count(to_char( v_message, '35'))
+  from fw_process_log 
+ 
+where N_STATUS = 100
+---- 5
+select sum(to_char(DT_TIMESTAMP, '.ff6'))
+
+  from fw_process_log 
+
+having sum(DT_TIMESTAMP) 
+---- 6
+select  count(n_action)
+
+  from fw_process_log  
+
+where N_ACTION = 11
+
+     and DT_TIMESTAMP like '%MAR%'
+---- 7
+select count(sid)
+  from fw_process_log  
+group  by (sid)
+having count(sid)>1 
+---- 8 
+select (DT_TIMESTAMP as char), OS_USERNAME
+  from fw_process_log  
+ where ID_USER=11136 
+---- 9 
+select to_char(DT_TIMESTAMP, 'Month'), count(id_log)
+  from fw_process_log   
+group by DT_TIMESTAMP 
+
+---- 10 
+select count(id_log ),  
+  from fw_process_log   
+where ID_PROCESS=5  
+     and N_STATUS = 500   
+     and '2018-02-22'<current_TIMESTAMP  
+     and '2018-03-02'>current_TIMESTAMP
+ 
+---- 11 
+select min(N_SUM)
+
+  from fw_transfers
+
+where ID_CONTRACT_FROM != ID_CONTRACT_TO
+
+     and to_char(DT_TIMESTAMP, 'dd-mm-yyyy hh24:mm')
+
+     and DT_TIMESTAMP = '14-02-2017 10:00'
+
+     and current_timestamp - interval '02' hour
+ 
+---- 12 
+select ID_CONTRACT_TO, DT_REAL, count(v_description)
+  from fw_transfers
+ 
+ group by ID_CONTRACT_TO, DT_REAL
+ 
+having to_char(V_DESCRIPTION)>22 desc 
+---- 13 
+select to_char(DT_INCOMING, 'dd.mm.yyyy'), ID_TRANSFER_INST
+ 
+  from fw_transfers
+ 
+where ID_CONTRACT_FROM = ID_CONTRACT_TO
