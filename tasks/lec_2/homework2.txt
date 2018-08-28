@@ -1,0 +1,84 @@
+--1
+-- 
+select fd.v_name as departament, sum(tre.f_sum) as total_sum, count(tre.f_sum) as payments, count(fc.ID_CONTRACT_INST) as contracts
+  
+from trans_external tre 
+  
+join fw_contracts fc
+    
+on tre.ID_CONTRACT = fc.ID_CONTRACT_INST
+  
+join fw_departments fd 
+    
+on fc.ID_DEPARTMENT = fd.ID_DEPARTMENT
+ 
+where fc.dt_start <= current_timestamp
+   
+and fc.dt_stop > current_timestamp
+   
+and tre.dt_event > to_date('2018-07-01', 'YYYY-MM-DD')
+   
+and tre.dt_event < to_date('2018-08-01', 'YYYY-MM-DD')
+ 
+group by fd.v_name
+ 
+
+-- 2 
+--
+select fwc.V_EXT_IDENT, fwc.V_STATUS, count(idtrans)
+
+from( select tre.id_trans as idtrans, tre.ID_CONTRACT 
+  
+from fw_contracts fc
+  
+join trans_external tre
+    
+on tre.ID_CONTRACT = fc.ID_CONTRACT_INST
+ 
+where fc.dt_start <= current_timestamp
+   
+and fc.dt_stop > current_timestamp
+   
+and tre.DT_EVENT > to_date('01-01-2017', 'DD-MM-YYYY')
+   
+and tre.DT_EVENT < to_date('01-01-2018', 'DD-MM-YYYY')) tab 
+   
+  join fw_contracts fwc
+   
+on tab.ID_CONTRACT = fwc.ID_CONTRACT_INST
+
+having count(idtrans) > 3
+
+
+--3 
+--после второго запроса у меня перестал работать livesql, 
+поэтому пишу как примерно должно работать
+
+select fd.v_name
+from fw_departments fd
+left join fw_contracts fc
+on fc.id_department = fd.id_department
+where fc.dt_start <= current_timestamp
+and fc.dt_stop > current_timestamp
+and fc.id_contract_inst is null 
+
+--4 
+select fc.v_ext_ident as contracts, max(tre.dt_event) as last_pay, tre.id_manager
+from fw_contracts fc 
+join trans_external tre
+on fc.id_contract_inst = tre.id_contract
+where fc.dt_start <= current_timestamp
+and fc.dt_stop > current_timestamp
+group by fc.v_ext_ident, tre.id_manager 
+
+--5 
+select fc.id_contract_inst as id_contract, fc.v_ext_ident as contract, fc.v_status as status, count(fc.id_currency) as count, cur.v_name
+from fw_contracts fc
+join fw_currency cur
+on fc.id_currency = cur.id_currency
+where fc.dt_start <= current_timestamp
+and fc.dt_stop > current_timestamp
+group by fc.id_contract_inst as id_contract, fc.v_ext_ident as contract, fc.v_status as status, cur.v_name
+having count(fc.id_currency) >1 
+order by fc.v_ext_ident
+
