@@ -1,0 +1,93 @@
+---1 
+create or replace procedure saveSigners(pV_FIO in scd_signers.v_fio%type , 
+                                        pID_MANAGER in scd_signers.id_manager%type, 
+                                        pACTION in number) is pid_user number;
+begin
+  select cu.id_user
+  into pid_user
+  from ci_users cu
+  where cu.id_user = pID_MANAGER
+exception
+  when NO_DATA_FOUND then 
+     raise_application_error(-20020, 'Пользователь не найден!');
+case 
+  when pACTION = 1 then
+     insert into scd_signers (v.fio, id_manager)
+     values (pV_FIO, pID_MANAGER) 
+     
+  when pACTION = 2 then 
+    update scd_signers 
+    set v.fio = pV_FIO
+    where id_manager
+    
+  when pACTION = 3 then
+     delete from scd_signers
+     where id.manager = pID_MANAGER 
+  end case;
+end;
+
+---2 
+create or replace function 
+       getDecoder(p_id_equip in SCD_EQUIP_KITS.ID_EQUIP_KITS_INST%TYPE) 
+                                                 return varchar2(200) is 
+                                                 pv_cas_id    varchar2(200), 
+                                                 pv_ext_ident varchar2(200), 
+                                                 p_res is varchar2(200);
+begin
+ 
+  select sek.v_cas_id, sek.v_ext_ident, sc.b_agency
+    into pv_cas_id, pv_ext_ident, pb_ag
+    from SCD_EQUIP_KITS sek 
+    join SCD_CONTRACTS sc 
+      on sc.id_contract_inst = sek.id_contract_inst 
+     and sek.id_equip_kits_inst = p_id_equip
+     and sek.dt_start <= current_timestamp 
+     and sek.dt_stop > current_timestamp
+   exception 
+        when NO_DATA_FOUND then 
+        RAISE_APPLICATION_ERROR(-20001, 'No data found!');
+     
+   if pb_ag = 1 then 
+      p_res := pv_cas_id;
+   else
+     p_res := pv_ext_ident;
+   end if;
+end getDecoder;
+--- 3 
+create or replace procedure 
+getEquip(pID_EQUIP_KITS_INST in SCD_EQUIP_KITS.ID_EQUIP_KITS_INST%TYPE default null, 
+                             pDWR out sys_refcursor) is
+begin
+
+  open pDWR for
+    select fc.v_long_title,           cu.v_username,
+           fwc.v_ext_ident,
+           sekt.v_name,
+           getDecoder(sekt.id_equip_kits_type)
+      from fw_clients fc
+    
+      join ci_users cu
+        on fc.id_client_inst = cu.id_client_inst
+       and fc.dt_start <= current_timestamp
+       and fc.dt_stop > current_timestamp
+    
+      join fw_contracts fwc
+        on fwc.id_client_inst = fc.id_client_inst
+       and fwc.dt_start <= current_timestamp
+       and fwc.dt_stop > current_timestamp
+       and fwc.v_status = 'A'
+    
+      join SCD_EQUIPMENT_KITS_TYPE sekt
+        on fwc.id_rec = sekt.id_rec
+       and sekt.dt_start <= current_timestamp
+       and sekt.dt_stop > current_timestamp
+       
+      join scd_equip_kits sek
+        on sek.id_equip_kits_type = sekt.id_equip_kits_type
+       and sek.dt_start <= current_timestamp
+       and sek.dt_stop > current_timestamp
+    
+     where sek.pID_EQUIP_KITS_INST = pID_EQUIP_KITS_INST
+        or pID_EQUIP_KITS_INST is null
+     
+end getEquip;
